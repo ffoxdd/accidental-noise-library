@@ -2,47 +2,41 @@ cmake_minimum_required(VERSION 2.6)
 
 project(AccidentalNoiseLibrary)
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 add_definitions(-DUSETHREAD)
 
 include_directories(ThirdParty/lua-5.1.4/src/ ThirdParty/toluapp/include/)
 
-file(GLOB sources ThirdParty/lua-5.1.4/src/lapi.c 
-ThirdParty/lua-5.1.4/src/lauxlib.c
-ThirdParty/lua-5.1.4/src/lbaselib.c
-ThirdParty/lua-5.1.4/src/lcode.c
-ThirdParty/lua-5.1.4/src/ldblib.c
-ThirdParty/lua-5.1.4/src/ldebug.c
-ThirdParty/lua-5.1.4/src/ldo.c
-ThirdParty/lua-5.1.4/src/ldump.c
-ThirdParty/lua-5.1.4/src/lfunc.c
-ThirdParty/lua-5.1.4/src/lgc.c
-ThirdParty/lua-5.1.4/src/linit.c
-ThirdParty/lua-5.1.4/src/liolib.c
-ThirdParty/lua-5.1.4/src/llex.c
-ThirdParty/lua-5.1.4/src/lmathlib.c
-ThirdParty/lua-5.1.4/src/lmem.c
-ThirdParty/lua-5.1.4/src/loadlib.c
-ThirdParty/lua-5.1.4/src/lobject.c
-ThirdParty/lua-5.1.4/src/lopcodes.c
-ThirdParty/lua-5.1.4/src/loslib.c
-ThirdParty/lua-5.1.4/src/lparser.c
-ThirdParty/lua-5.1.4/src/lstate.c
-ThirdParty/lua-5.1.4/src/lstring.c
-ThirdParty/lua-5.1.4/src/lstrlib.c
-ThirdParty/lua-5.1.4/src/ltable.c
-ThirdParty/lua-5.1.4/src/ltablib.c
-ThirdParty/lua-5.1.4/src/ltm.c
-ThirdParty/lua-5.1.4/src/lundump.c
-ThirdParty/lua-5.1.4/src/lvm.c
-ThirdParty/lua-5.1.4/src/lzio.c
-ThirdParty/lua-5.1.4/src/print.c
-ThirdParty/toluapp/src/lib/tolua_event.c
-ThirdParty/toluapp/src/lib/tolua_is.c
-ThirdParty/toluapp/src/lib/tolua_map.c
-ThirdParty/toluapp/src/lib/tolua_push.c
-ThirdParty/toluapp/src/lib/tolua_to.c
-Framework/main.cpp
-Bindings/bind_anl.cpp
-)
+file(GLOB lua_sources RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ThirdParty/lua-5.1.4/src/*.c)
+list(REMOVE_ITEM lua_sources ThirdParty/lua-5.1.4/src/lua.c ThirdParty/lua-5.1.4/src/luac.c)
+file(GLOB toluapp_sources RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ThirdParty/toluapp/src/lib/*.c)
+set(additional_sources Framework/main.cpp Bindings/bind_anl.cpp)
+set(sources ${lua_sources} ${toluapp_sources} ${additional_sources})
 
 add_executable(anl ${sources})
+
+include(GNUInstallDirs)
+
+set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX "/usr/local" CACHE PATH "Install path prefix, prepended onto install directories" FORCE)
+endif()
+
+set(DEST_DIR ${CMAKE_INSTALL_INCLUDEDIR}/anl)
+
+function(install_files_with_extension src_dir dest_dir extension)
+    file(GLOB_RECURSE FILES "${src_dir}/*.${extension}")
+    foreach(file ${FILES})
+        if(NOT file MATCHES "/ThirdParty/") # skip files in the ThirdParty directory
+            file(RELATIVE_PATH rel_file ${src_dir} ${file})
+            get_filename_component(dest_dir_path ${dest_dir}/${rel_file} DIRECTORY)
+            install(FILES ${file} DESTINATION ${dest_dir_path})
+        endif()
+    endforeach()
+endfunction()
+
+install_files_with_extension(${SOURCE_DIR} ${DEST_DIR} "h")
+install_files_with_extension(${SOURCE_DIR} ${DEST_DIR} "inl")

@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
+project(AccidentalNoiseLibrary)
+
 add_definitions(-DUSETHREAD)
 
 include_directories(ThirdParty/lua-5.1.4/src/ ThirdParty/toluapp/include/)
